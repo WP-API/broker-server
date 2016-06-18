@@ -19,7 +19,7 @@ abstract class Base {
 	}
 
 	protected function get_state() {
-		return get_transient( 'broker_request:' . $this->key );
+		return get_option( 'broker_request:' . $this->key );
 	}
 
 	protected function get_uncached_state() {
@@ -28,8 +28,8 @@ abstract class Base {
 		// MANUAL DB ACCESS: FIXME TODO FUCKTHIS
 		$value = $wpdb->get_col(
 			$wpdb->prepare(
-				'SELECT option_value FROM sz_options WHERE option_name=%s LIMIT 1',
-				'_transient_broker_request:' . $this->key
+				'SELECT option_value FROM ' . $wpdb->options . ' WHERE option_name=%s LIMIT 1',
+				'broker_request:' . $this->key
 			)
 		);
 
@@ -37,7 +37,7 @@ abstract class Base {
 	}
 
 	protected function set_state( $state ) {
-		set_transient( 'broker_request:' . $this->key, $state );
+		update_option( 'broker_request:' . $this->key, $state );
 	}
 
 	protected function get_data() {
