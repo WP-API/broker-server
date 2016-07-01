@@ -46,7 +46,14 @@ function discover_api_root( $uri, $legacy = false ) {
 	}
 
 	$links = wp_remote_retrieve_header( $response, 'link' );
-	$links = explode( ',', $links );
+
+	if ( is_array( $links ) ) {
+		$links = array_reduce( $links, function( $links, $link ) {
+			return array_merge( $links, explode( ',', $link ) );
+		}, array() );
+	} else {
+		$links = explode( ',', $links );
+	}
 
 	// Find the correct link by relation
 	foreach ( $links as $link ) {
