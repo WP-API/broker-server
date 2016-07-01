@@ -40,7 +40,7 @@ function get_broker_id() {
 	 *
 	 * @param string $id Broker ID. Defaults to home URL.
 	 */
-	return apply_filters( 'authbroker.id', home_url() );
+	return apply_filters( 'authbroker.id', home_url( '/' ) );
 }
 
 /**
