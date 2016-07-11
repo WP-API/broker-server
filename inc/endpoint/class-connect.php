@@ -52,33 +52,43 @@ class Connect extends Base {
 	}
 
 	public function run( $params ) {
-		// Step 1: Check authentication
-		$client = $this->check_client_authentication();
-		if ( is_wp_error( $client ) ) {
-			// TODO: error
-			echo 'Client authentication failed';
-			return;
-		}
 
-		// Authentication succeeded, send headers.
-		header('Content-Type: application/json');
+		header( 'Content-Type: application/json' );
 		if ( ob_get_level() > 0 ) {
 			ob_end_flush();
 		}
 		flush();
+
+		// Step 1: Check authentication
+		$client = $this->check_client_authentication();
+		if ( is_wp_error( $client ) ) {
+			$this->emit_response([
+				'status'  => 'error',
+				'type'    => $client->get_error_code(),
+				'message' => 'Client authentication failed: ' . $client->get_error_message(),
+			]);
+			return;
+		}
 
 		$this->key = wp_generate_password( 8, false, false );
 		$this->log_event( 'Processing' );
 
 		// Step 2: Run autodiscovery
 		$site = Discovery\discover( $params['server_url'] );
-		if ( empty( $site ) ) {
-			// TODO: error
-			echo 'Could not discover API';
+		if ( is_wp_error( $site ) ) {
+			$this->emit_response([
+				'status'  => 'error',
+				'type'    => $site->get_error_code(),
+				'message' => 'Could not discover API: ' . $site->get_error_message(),
+			]);
 			return;
 		}
 		if ( ! $site->supportsAuthentication( 'broker' ) ) {
-			echo 'Site does not support broker authentication.';
+			$this->emit_response([
+				'status'  => 'error',
+				'type'    => 'broker-auth-not-supported',
+				'message' => 'This WordPress site does not support the Broker Authentication method.',
+			]);
 			return;
 		}
 
@@ -105,8 +115,9 @@ class Connect extends Base {
 
 		if ( is_wp_error( $value ) ) {
 			$this->emit_response([
-				'status' => 'error',
-				'type'   => $value->get_error_code(),
+				'status'  => 'error',
+				'type'    => $value->get_error_code(),
+				'message' => 'Error awaiting for response: ' . $value->get_error_message(),
 			]);
 			return;
 		}
