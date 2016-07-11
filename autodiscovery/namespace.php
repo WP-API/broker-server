@@ -2,7 +2,7 @@
 
 namespace WordPress\Discovery;
 
-use Exception;
+use WP_Error;
 use Requests;
 
 /**
@@ -10,13 +10,17 @@ use Requests;
  *
  * @param string $uri URI to start the search from.
  * @param bool $legacy Should we check for the legacy API too?
- * @return Site|null Site data if available, null if not a WP site.
+ * @return Site|WP_Error Site data if available
  */
 function discover( $uri, $legacy = false ) {
 	// Step 1: Find the API itself.
 	$root = discover_api_root( $uri, $legacy );
+
+	if ( is_wp_error( $root ) ) {
+		return $root;
+	}
 	if ( empty( $root ) ) {
-		return null;
+		return new WP_Error( 'not-a-wordpress-site', 'This site is not a WordPress site.' );
 	}
 
 	// Step 2: Ask the API for information.
@@ -25,8 +29,6 @@ function discover( $uri, $legacy = false ) {
 
 /**
  * Discover the API root from an address.
- *
- * @throws \Exception on HTTP error.
  *
  * @param string $uri URI to search for the API from.
  * @param bool $legacy Should we check for the legacy API too?
@@ -37,12 +39,12 @@ function discover_api_root( $uri, $legacy = false ) {
 		'method' => 'HEAD',
 	));
 	if ( is_wp_error( $response ) ) {
-		throw new Exception( $response->get_error_message() );
+		return $response;
 	}
 	$code = wp_remote_retrieve_response_code( $response );
 	if ( $code !== 200 ) {
 		$body = wp_remote_retrieve_body( $response );
-		throw new Exception( sprintf( 'Server returned error code %d: %s', $code, $body ) );
+		return new WP_Error( 'server-error', sprintf( 'Server returned error code %d: %s', $code, $body ) );
 	}
 
 	$links = wp_remote_retrieve_header( $response, 'link' );
@@ -111,17 +113,17 @@ function parse_link_header( $link ) {
 function get_index_information( $url ) {
 	$response = wp_remote_get( $url );
 	if ( is_wp_error( $response ) ) {
-		throw new Exception( $response->get_error_message() );
+		return $response;
 	}
 	$code = wp_remote_retrieve_response_code( $response );
 	$body = wp_remote_retrieve_body( $response );
 	if ( $code !== 200 ) {
-		throw new Exception( sprintf( 'Server returned error code %d: %s', $code, $body ) );
+		return new WP_Error( 'server-error', sprintf( 'Server returned error code %d: %s', $code, $body ) );
 	}
 
 	$index = json_decode( $body );
 	if ( empty( $index ) && json_last_error() !== JSON_ERROR_NONE ) {
-		throw new Exception( json_last_error_msg(), json_last_error() );
+		return new WP_Error( 'json-decode-error', json_last_error_msg() );
 	}
 
 	return new Site( $index, $url );
