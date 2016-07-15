@@ -57,6 +57,15 @@ function dispatch() {
 
 	// Ensure our output isn't buffered
 	header( 'Content-Encoding: none' );
+
+	rest_send_cors_headers( null );
+	header( 'Access-Control-Allow-Headers: Authorization' );
+
+	// Support for CORS requests
+	if ( $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
+		die();
+	}
+
 	ob_end_flush();
 
 	switch ( $wp->query_vars[ QUERY_VAR ] ) {
