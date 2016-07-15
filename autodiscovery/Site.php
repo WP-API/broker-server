@@ -32,6 +32,17 @@ class Site {
 	}
 
 	/**
+	 * Get the data for the site.
+	 *
+	 * Contains all the site from the API Index response.
+	 *
+	 * @return object
+	 */
+	public function getData() {
+		return $this->data;
+	}
+
+	/**
 	 * Get the name of a site.
 	 *
 	 * @return string
