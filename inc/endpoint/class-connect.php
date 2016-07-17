@@ -127,6 +127,7 @@ class Connect extends Base {
 			'client_token'  => $value['client_token'],
 			'client_secret' => $value['client_secret'],
 			'api_root'      => $site->getIndexURL(),
+			'site_data'     => $site->getData(),
 		]);
 	}
 
